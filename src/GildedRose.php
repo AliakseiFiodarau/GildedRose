@@ -7,6 +7,20 @@ namespace GildedRose;
 final class GildedRose
 {
     /**
+     * Item names string constants.
+     */
+    const NAME_AGED_BRIE = 'Aged Brie';
+    const NAME_BACKSTAGE_PASSES = 'Backstage passes to a TAFKAL80ETC concert';
+    const NAME_SULFURAS = 'Sulfuras, Hand of Ragnaros';
+    const NAME_CONJURED = 'Conjured';
+
+    /**
+     * Min and max quantity values.
+     */
+    const MAX_QUALITY = 50;
+    const MIN_QUALITY = 0;
+
+    /**
      * @param Item[] $items
      */
     public function __construct(
@@ -14,54 +28,54 @@ final class GildedRose
     ) {
     }
 
-    public function updateQuality(): void
-    {
+    /**
+     * @return void
+     */
+    public function updateQuality(): void {
         foreach ($this->items as $item) {
-            if ($item->name != 'Aged Brie' and $item->name != 'Backstage passes to a TAFKAL80ETC concert') {
-                if ($item->quality > 0) {
-                    if ($item->name != 'Sulfuras, Hand of Ragnaros') {
-                        $item->quality = $item->quality - 1;
-                    }
-                }
-            } else {
-                if ($item->quality < 50) {
-                    $item->quality = $item->quality + 1;
-                    if ($item->name == 'Backstage passes to a TAFKAL80ETC concert') {
-                        if ($item->sellIn < 11) {
-                            if ($item->quality < 50) {
-                                $item->quality = $item->quality + 1;
-                            }
-                        }
-                        if ($item->sellIn < 6) {
-                            if ($item->quality < 50) {
-                                $item->quality = $item->quality + 1;
-                            }
-                        }
-                    }
-                }
+
+            $sellIn = &$item->sellIn;
+            $quality = &$item->quality;
+            $name = $item->name;
+
+            if ($name === self::NAME_SULFURAS) {
+                continue;
             }
 
-            if ($item->name != 'Sulfuras, Hand of Ragnaros') {
-                $item->sellIn = $item->sellIn - 1;
+            $sellIn--;
+            $qualityDecreaseRate = $sellIn < 0 ? 2 : 1;
+
+            if ($name === self::NAME_AGED_BRIE) {
+                $quality += $qualityDecreaseRate;
+                $quality = min($quality, self::MAX_QUALITY);
+                continue;
             }
 
-            if ($item->sellIn < 0) {
-                if ($item->name != 'Aged Brie') {
-                    if ($item->name != 'Backstage passes to a TAFKAL80ETC concert') {
-                        if ($item->quality > 0) {
-                            if ($item->name != 'Sulfuras, Hand of Ragnaros') {
-                                $item->quality = $item->quality - 1;
-                            }
-                        }
-                    } else {
-                        $item->quality = $item->quality - $item->quality;
-                    }
-                } else {
-                    if ($item->quality < 50) {
-                        $item->quality = $item->quality + 1;
-                    }
+            if ($name === self::NAME_BACKSTAGE_PASSES) {
+                switch ($sellIn) {
+                    case $sellIn >= 10:
+                        $quality++;
+                        break;
+                    case $sellIn < 10 && $sellIn > 3:
+                        $quality += 2;
+                        break;
+                    case $sellIn <= 3 && $sellIn > 0:
+                        $quality += 3;
+                        break;
+                    case $sellIn < 1:
+                        $quality = 0;
                 }
+
+                $quality = min($quality, self::MAX_QUALITY);
+                continue;
             }
+
+            if ($name === self::NAME_CONJURED) {
+                $qualityDecreaseRate *= 2;
+            }
+
+            $quality -= $qualityDecreaseRate;
+            $quality = max($quality, self::MIN_QUALITY);
         }
     }
 }
